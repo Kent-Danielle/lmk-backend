@@ -2,12 +2,18 @@ import os
 from sqlalchemy.orm import Session as DBSession
 from fastapi import BackgroundTasks, HTTPException
 
-from app.models.swipe import CategoryOption
-
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.participant import Participant
-from app.schemas.session import CreateSessionRequest, CreateSessionResponse, SessionOut, SessionStateResponse
+from app.models.swipe import CategoryOption
+from app.schemas.session import (
+    CreateSessionRequest,
+    CreateSessionResponse,
+    SessionOut,
+    SessionStateResponse,
+)
+from app.constants import NEXT_STATE, SessionState
+from app.services import ai_service
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
@@ -38,7 +44,7 @@ class SessionService:
         db.commit()
 
         background_tasks.add_task(
-            generate_questions,
+            ai_service.generate_questions,
             str(session.id),
             body.topic,
             body.context,
@@ -90,12 +96,39 @@ class SessionService:
             categories_ready=categories_ready,
         )
 
-def generate_questions(
-    session_id: str,
-    topic: str,
-    context: str | None,
-    host_notes: str | None,
-) -> None:
-    # TODO: A4 — OpenAI Call 1, validate mechanic order + Other/Any, save to DB
-    pass
+    @staticmethod
+    def advance_state(
+        db: DBSession,
+        session_id: str,
+        participant_id: str,
+        background_tasks: BackgroundTasks,
+    ) -> SessionStateResponse:
+        session = db.query(Session).filter(Session.id == session_id).first()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found.")
+        
+        if str(session.host_id) != participant_id:
+            raise HTTPException(status_code=403, detail="Only the host can advance.")
+        
+        next_state = NEXT_STATE.get(session.state)
+        if not next_state:
+            raise HTTPException(status_code=400, detail="Cannot advance from this state")
+
+        session.state = next_state
+        db.commit()
+        
+        if next_state == SessionState.REVEAL:
+            background_tasks.add_task(ai_service.generate_categories, str(session.id))
+
+        categories_ready = (
+            db.query(CategoryOption).filter(CategoryOption.session_id == session_id).first()
+            is not None
+        )
+        
+        return SessionStateResponse(
+            state=session.state,
+            participants_answered=session.answered_count,
+            expected=session.expected_count,
+            categories_ready=categories_ready,
+        )
 

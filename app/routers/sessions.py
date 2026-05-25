@@ -47,9 +47,14 @@ async def get_session_state(
 
 
 @router.post("/{session_id}/advance", response_model=APIResponse)
-async def advance_session(session_id: str, body: AdvanceRequest):
-    # TODO: call SessionService.advance (host only)
-    raise HTTPException(status_code=501, detail="Not implemented")
+async def advance_session(
+    session_id: str,
+    body: AdvanceRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    data = SessionService.advance_state(db, session_id, body.participant_id, background_tasks)
+    return APIResponse(success=True, data=data.model_dump())
 
 
 @router.get("/{session_id}/reveal", response_model=APIResponse)
