@@ -33,6 +33,7 @@ class SessionStateResponse(BaseModel):
     state: SessionState
     participants_answered: int
     expected: int
+    categories_ready: bool = False
 
 
 class AdvanceRequest(BaseModel):

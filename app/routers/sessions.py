@@ -29,15 +29,21 @@ async def create_session(
 
 
 @router.get("/{session_id}", response_model=APIResponse)
-async def get_session(session_id: str):
-    # TODO: call SessionService.get
-    raise HTTPException(status_code=501, detail="Not implemented")
+async def get_session(
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    data = SessionService.get(db, session_id)
+    return APIResponse(success=True, data=data.model_dump())
 
 
 @router.get("/{session_id}/state", response_model=APIResponse)
-async def get_session_state(session_id: str):
-    # TODO: call SessionService.get_state
-    raise HTTPException(status_code=501, detail="Not implemented")
+async def get_session_state(
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    data = SessionService.get_state(db, session_id)
+    return APIResponse(success=True, data=data.model_dump())
 
 
 @router.post("/{session_id}/advance", response_model=APIResponse)
