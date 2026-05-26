@@ -11,7 +11,7 @@ http:
 runtime:
   variables:
     - name: session_id
-      value: 1512b2c3-c860-451c-94ee-dc09cde6b4b2
+      value: 1600a1d5-41cb-4122-b479-d1b89c0c805b
 
 settings:
   encodeUrl: true
