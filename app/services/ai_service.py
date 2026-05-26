@@ -1,16 +1,16 @@
-import os
 import uuid as _uuid
 
 from openai import OpenAI, APITimeoutError, APIError
 from sqlalchemy.orm import Session as DBSession, joinedload
 from fastapi import HTTPException
 
+from app.config import OPENAI_API_KEY, OPENAI_MODEL
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.question import Question, QuestionOption
 from app.schemas.ai import AIQuestion, AIQuestionsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import Mechanic, AI_MODEL, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
+from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
 from app.utils.prompts import QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 
@@ -29,7 +29,7 @@ class AIService:
         Retries up to AI_MAX_RETRIES times on validation failures or timeouts.
         """
         client = OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
+            api_key=OPENAI_API_KEY,
             timeout=AI_TIMEOUT_SECONDS,
         )
         user_prompt = AIService._build_user_prompt(topic, context, host_notes)
@@ -38,7 +38,7 @@ class AIService:
         for attempt in range(1, total_attempts + 1):
             try:
                 completion = client.beta.chat.completions.parse(
-                    model=AI_MODEL,
+                    model=OPENAI_MODEL,
                     messages=[
                         {"role": "system", "content": QUESTION_GENERATION_SYSTEM_PROMPT},
                         {"role": "user", "content": user_prompt},
