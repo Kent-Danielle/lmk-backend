@@ -1,4 +1,3 @@
-import os
 from sqlalchemy.orm import Session as DBSession
 from fastapi import BackgroundTasks, HTTPException
 
@@ -12,10 +11,13 @@ from app.schemas.session import (
     SessionOut,
     SessionStateResponse,
 )
-from app.constants import NEXT_STATE, SessionState
+from app.constants import (
+    NEXT_STATE,
+    SessionState,
+)
+from app.utils.urls import FRONTEND_URL, URLPath
+from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services import ai_service
-
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 
 class SessionService:
@@ -54,7 +56,7 @@ class SessionService:
         return CreateSessionResponse(
             session_id=str(session.id),
             host_participant_id=str(host.id),
-            join_link=f"{FRONTEND_URL}/join/{session.id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.id}",
         )
 
     @staticmethod
@@ -64,7 +66,10 @@ class SessionService:
     ) -> SessionOut:
         session = db.query(Session).filter(Session.id == session_id).first()
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found.")
+            raise HTTPException(
+                status_code=HTTPStatusCode.NOT_FOUND,
+                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
         return SessionOut(
             id=str(session.id),
             topic=session.topic,
@@ -82,7 +87,10 @@ class SessionService:
     ) -> SessionStateResponse:
         session = db.query(Session).filter(Session.id == session_id).first()
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found.")
+            raise HTTPException(
+                status_code=HTTPStatusCode.NOT_FOUND,
+                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
         
         categories_ready = (
             db.query(CategoryOption).filter(CategoryOption.session_id == session_id).first()
@@ -105,14 +113,23 @@ class SessionService:
     ) -> SessionStateResponse:
         session = db.query(Session).filter(Session.id == session_id).first()
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found.")
+            raise HTTPException(
+                status_code=HTTPStatusCode.NOT_FOUND,
+                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
         
         if str(session.host_id) != participant_id:
-            raise HTTPException(status_code=403, detail="Only the host can advance.")
+            raise HTTPException(
+                status_code=HTTPStatusCode.FORBIDDEN,
+                detail=HTTPErrorMessage.ONLY_HOST_CAN_ADVANCE,
+            )
         
         next_state = NEXT_STATE.get(session.state)
         if not next_state:
-            raise HTTPException(status_code=400, detail="Cannot advance from this state")
+            raise HTTPException(
+                status_code=HTTPStatusCode.BAD_REQUEST,
+                detail=HTTPErrorMessage.CANNOT_ADVANCE_FROM_STATE,
+            )
 
         session.state = next_state
         db.commit()

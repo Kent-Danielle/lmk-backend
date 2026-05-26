@@ -14,6 +14,7 @@ from app.schemas.reveal import RevealResponse
 from app.schemas.category import CategoriesResponse
 from app.schemas.results import ResultsResponse
 from app.services.session_service import SessionService
+from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -60,16 +61,25 @@ async def advance_session(
 @router.get("/{session_id}/reveal", response_model=APIResponse)
 async def get_reveal(session_id: str):
     # TODO: call ResultsService.get_reveal
-    raise HTTPException(status_code=501, detail="Not implemented")
+    raise HTTPException(
+        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
+        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
+    )
 
 
 @router.get("/{session_id}/categories", response_model=APIResponse)
 async def get_categories(session_id: str):
     # TODO: call AIService.get_categories
-    raise HTTPException(status_code=501, detail="Not implemented")
+    raise HTTPException(
+        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
+        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
+    )
 
 
 @router.get("/{session_id}/results", response_model=APIResponse)
 async def get_results(session_id: str):
     # TODO: call ResultsService.get_results
-    raise HTTPException(status_code=501, detail="Not implemented")
+    raise HTTPException(
+        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
+        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
+    )
