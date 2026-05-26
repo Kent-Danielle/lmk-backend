@@ -1,0 +1,22 @@
+info:
+  name: Get Session Questions
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{base_url}}sessions/{{session_id}}/questions"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_url
+      value: http://localhost:8000/
+    - name: session_id
+      value: 1512b2c3-c860-451c-94ee-dc09cde6b4b2
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
