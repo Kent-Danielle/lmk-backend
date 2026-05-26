@@ -1,3 +1,5 @@
+import uuid as _uuid
+
 from sqlalchemy.orm import Session as DBSession
 from fastapi import BackgroundTasks, HTTPException
 
@@ -64,7 +66,7 @@ class SessionService:
         db: DBSession,
         session_id: str
     ) -> SessionOut:
-        session = db.query(Session).filter(Session.id == session_id).first()
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
@@ -85,7 +87,7 @@ class SessionService:
         db: DBSession,
         session_id: str
     ) -> SessionStateResponse:
-        session = db.query(Session).filter(Session.id == session_id).first()
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
@@ -93,7 +95,7 @@ class SessionService:
             )
         
         categories_ready = (
-            db.query(CategoryOption).filter(CategoryOption.session_id == session_id).first()
+            db.query(CategoryOption).filter(CategoryOption.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
 
@@ -111,7 +113,7 @@ class SessionService:
         participant_id: str,
         background_tasks: BackgroundTasks,
     ) -> SessionStateResponse:
-        session = db.query(Session).filter(Session.id == session_id).first()
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
@@ -138,7 +140,7 @@ class SessionService:
             background_tasks.add_task(ai_service.generate_categories, str(session.id))
 
         categories_ready = (
-            db.query(CategoryOption).filter(CategoryOption.session_id == session_id).first()
+            db.query(CategoryOption).filter(CategoryOption.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
         
