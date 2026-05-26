@@ -1,0 +1,30 @@
+info:
+  name: Create Session
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base_url}}sessions"
+  body:
+    type: json
+    data: |2-
+        {
+          "topic": "Saturday hangout",
+          "context": "6 friends, mix of budgets",
+          "expected_count": 6,
+          "host_notes": "Keep it casual",
+          "host_display_name": "EL-J"
+        }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_url
+      value: http://localhost:8000/
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

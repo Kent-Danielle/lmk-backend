@@ -1,0 +1,26 @@
+info:
+  name: Get Session Advance
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{base_url}}sessions/{{session_id}}/advance"
+  body:
+    type: json
+    data: |-
+      {
+          "participant_id": "f8e7f9cc-d7f6-4c8c-aed6-5854b129f808"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: session_id
+      value: 1512b2c3-c860-451c-94ee-dc09cde6b4b2
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
