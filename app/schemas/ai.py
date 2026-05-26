@@ -13,3 +13,13 @@ class AIQuestion(BaseModel):
 class AIQuestionsResponse(BaseModel):
     valid: bool
     questions: list[AIQuestion]
+
+
+class AICategory(BaseModel):
+    name: str
+    reasoning: str
+
+
+class AICategoriesResponse(BaseModel):
+    valid: bool
+    categories: list[AICategory]
