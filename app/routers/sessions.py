@@ -14,6 +14,7 @@ from app.schemas.reveal import RevealResponse
 from app.schemas.category import CategoriesResponse
 from app.schemas.results import ResultsResponse
 from app.services.session_service import SessionService
+from app.services.ai_service import AIService
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -56,6 +57,15 @@ async def advance_session(
 ):
     data = SessionService.advance_state(db, session_id, body.participant_id, background_tasks)
     return APIResponse(success=True, data=data.model_dump())
+
+
+@router.get("/{session_id}/questions", response_model=APIResponse)
+async def get_questions(
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    data = AIService.get_questions(db, session_id)
+    return APIResponse(success=True, data=[q.model_dump() for q in data])
 
 
 @router.get("/{session_id}/reveal", response_model=APIResponse)

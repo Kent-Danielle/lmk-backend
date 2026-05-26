@@ -19,7 +19,7 @@ from app.constants import (
 )
 from app.utils.urls import FRONTEND_URL, URLPath
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
-from app.services import ai_service
+from app.services.ai_service import AIService
 
 
 class SessionService:
@@ -48,7 +48,7 @@ class SessionService:
         db.commit()
 
         background_tasks.add_task(
-            ai_service.generate_questions,
+            AIService.generate_questions,
             str(session.id),
             body.topic,
             body.context,
@@ -137,7 +137,7 @@ class SessionService:
         db.commit()
         
         if next_state == SessionState.REVEAL:
-            background_tasks.add_task(ai_service.generate_categories, str(session.id))
+            background_tasks.add_task(AIService.generate_categories, str(session.id))
 
         categories_ready = (
             db.query(CategoryOption).filter(CategoryOption.session_id == _uuid.UUID(session_id)).first()

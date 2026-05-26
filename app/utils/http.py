@@ -16,3 +16,5 @@ class HTTPErrorMessage(str, Enum):
     ONLY_HOST_CAN_ADVANCE = "Only the host can advance."
     CANNOT_ADVANCE_FROM_STATE = "Cannot advance from this state"
     NOT_IMPLEMENTED = "Not implemented"
+    QUESTIONS_NOT_READY = "Questions are still being generated. Please try again shortly."
+    QUESTIONS_GENERATION_FAILED = "Question generation failed. Please create a new session."
