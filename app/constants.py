@@ -27,3 +27,9 @@ NEXT_STATE = {
     SessionState.REVEAL: SessionState.SWIPE_PHASE,
     SessionState.SWIPE_PHASE: SessionState.RESULTS,
 }
+
+
+MAX_HOST_NOTES_LENGTH = 500
+AI_MODEL = "gpt-4o"
+AI_TIMEOUT_SECONDS = 30
+AI_MAX_RETRIES = 2
