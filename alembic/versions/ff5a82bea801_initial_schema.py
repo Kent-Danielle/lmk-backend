@@ -67,7 +67,8 @@ def upgrade() -> None:
     sa.Column('answered_at', sa.TIMESTAMP(), nullable=True),
     sa.ForeignKeyConstraint(['participant_id'], ['participants.id'], ),
     sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('participant_id', 'question_id', name='uq_answer_participant_question')
     )
     op.create_table('question_options',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -83,7 +84,8 @@ def upgrade() -> None:
     sa.Column('direction', sa.Enum('YES', 'NO', name='swipedirection'), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['category_options.id'], ),
     sa.ForeignKeyConstraint(['participant_id'], ['participants.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('participant_id', 'category_id', name='uq_swipe_participant_category')
     )
     # ### end Alembic commands ###
 
