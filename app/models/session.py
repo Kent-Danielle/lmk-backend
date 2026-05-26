@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, Text, Enum, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -19,7 +19,7 @@ class Session(Base):
     expected_count = Column(Integer, nullable=False)
     deadline       = Column(TIMESTAMP, nullable=True)
     answered_count = Column(Integer, default=0)
-    created_at     = Column(TIMESTAMP, default=datetime.utcnow)
+    created_at     = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     participants     = relationship("Participant", back_populates="session",
                                     foreign_keys="Participant.session_id")
