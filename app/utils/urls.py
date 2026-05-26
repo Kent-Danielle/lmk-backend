@@ -1,16 +1,14 @@
-import os
 from enum import Enum
 
+from app.config import FRONTEND_URL
 
-# URL Paths
+
 class URLPath(str, Enum):
     JOIN_SESSION = "/join"
 
 
-# Environment & Configuration
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-
-CORS_ORIGINS = [
+CORS_ORIGINS = list(dict.fromkeys([
+    FRONTEND_URL,
     "http://localhost:5173",
     "http://localhost:3000",
-]
+]))
