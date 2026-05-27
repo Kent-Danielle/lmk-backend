@@ -66,14 +66,6 @@ async def get_questions(
     return APIResponse(success=True, data=[q.model_dump() for q in data])
 
 
-@router.get("/{session_id}/reveal", response_model=APIResponse)
-async def get_reveal(session_id: str):
-    # TODO: call ResultsService.get_reveal
-    raise HTTPException(
-        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
-        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
-    )
-
 @router.get("/{session_id}/results", response_model=APIResponse)
 async def get_results(
     session_id: str,
