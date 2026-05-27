@@ -10,14 +10,13 @@ from app.config import OPENAI_API_KEY, OPENAI_MODEL
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.question import Question
-from app.schemas.ai import AIQuestion, AIQuestionsResponse, AICategoriesResponse
+from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResultsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
-from app.services.session_service import SessionService
-from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, CATEGORY_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
+from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
+from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, RESULT_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.question_service import QuestionService
-from app.services.category_service import CategoryService
+from app.services.result_service import ResultService
 from app.services.answer_service import AnswerService
 
 logger = logging.getLogger(__name__)
@@ -35,32 +34,41 @@ class AIService:
         context: str | None,
         host_notes: str | None,
     ) -> None:
+        logger.info("Starting question generation for session %s", session_id)
         user_prompt = AIService._build_user_prompt(topic, context, host_notes)
         total_attempts = AI_MAX_RETRIES + 1
 
         for attempt in range(1, total_attempts + 1):
             try:
+                logger.info("Session %s: question generation attempt %d/%d", session_id, attempt, total_attempts)
                 result_response = AIService._generate_questions_response(_openai_client, user_prompt)
                 if result_response is None:
+                    logger.warning("Session %s: received null response from OpenAI", session_id)
                     return
 
                 if not result_response.valid:
+                    logger.warning("Session %s: response marked as invalid by AI", session_id)
                     return
 
                 if AIService._validate_response(result_response.questions):
+                    logger.info("Session %s: validation passed with %d questions, saving", session_id, len(result_response.questions))
                     db = SessionLocal()
                     try:
                         QuestionService.save_questions(db, session_id, result_response.questions)
                     finally:
                         db.close()
                     return
+                else:
+                    logger.warning("Session %s: validation failed for %d questions", session_id, len(result_response.questions))
 
             except APITimeoutError:
+                logger.warning("Session %s: OpenAI timeout on attempt %d", session_id, attempt)
                 continue
 
             except (APIError, Exception):
                 logger.exception("Question generation failed for session %s on attempt %d", session_id, attempt)
                 return
+        logger.error("Session %s: question generation exhausted all %d attempts", session_id, total_attempts)
 
     @staticmethod
     def get_questions(
@@ -121,43 +129,54 @@ class AIService:
             return None
 
     @staticmethod
-    def generate_categories(session_id: str) -> None:
+    def generate_results(session_id: str) -> None:
+        logger.info("Starting result generation for session %s", session_id)
         total_attempts = AI_MAX_RETRIES + 1
 
         for attempt in range(1, total_attempts + 1):
             try:
+                logger.info("Session %s: result generation attempt %d/%d", session_id, attempt, total_attempts)
                 answers_data = AnswerService.fetch_session_answers(session_id)
                 if not answers_data:
+                    logger.warning("Session %s: no answers found, aborting result generation", session_id)
                     return
 
+                logger.info("Session %s: generating answer summary", session_id)
                 answer_summary = AIService._generate_answer_summary(_openai_client, answers_data)
                 if not answer_summary:
+                    logger.warning("Session %s: answer summary generation failed, retrying", session_id)
                     continue
 
-                category_response = AIService._generate_category_response(
+                logger.info("Session %s: generating result response", session_id)
+                results_response = AIService._generate_result_response(
                     _openai_client, answer_summary, answers_data
                 )
 
-                if category_response is None or not category_response.valid:
+                if results_response is None or not results_response.valid:
+                    logger.warning("Session %s: result response null or invalid, retrying", session_id)
                     continue
 
-                if AIService._validate_categories(category_response.categories):
+                if AIService._validate_results(results_response.results):
+                    logger.info("Session %s: validation passed with %d results, saving", session_id, len(results_response.results))
                     db = SessionLocal()
                     try:
-                        CategoryService.save_categories(db, session_id, category_response.categories)
-                        SessionService.advance_session_to_state(db, session_id, SessionState.RESULTS)
+                        ResultService.save_results(db, session_id, results_response.results)
                     finally:
                         db.close()
                     return
+                else:
+                    logger.warning("Session %s: validation failed for %d results", session_id, len(results_response.results))
 
             except APITimeoutError:
+                logger.warning("Session %s: OpenAI timeout on attempt %d", session_id, attempt)
                 continue
 
             except (APIError, Exception):
-                logger.exception("Category generation failed for session %s on attempt %d", session_id, attempt)
+                logger.exception("Result generation failed for session %s on attempt %d", session_id, attempt)
                 return
+        logger.error("Session %s: result generation exhausted all %d attempts", session_id, total_attempts)
 
-    # region Category Generation Helpers
+    # region Result Generation Helpers
 
     @staticmethod
     def _generate_answer_summary(client: OpenAI, answers_data: dict) -> str | None:
@@ -184,23 +203,23 @@ class AIService:
             return None
 
     @staticmethod
-    def _generate_category_response(
+    def _generate_result_response(
         client: OpenAI, answer_summary: str, answers_data: dict
-    ) -> AICategoriesResponse | None:
+    ) -> AIResultsResponse | None:
         try:
             completion = client.beta.chat.completions.parse(
                 model=OPENAI_MODEL,
                 messages=[
                     {
                         "role": "system",
-                        "content": CATEGORY_GENERATION_SYSTEM_PROMPT,
+                        "content": RESULT_GENERATION_SYSTEM_PROMPT,
                     },
                     {
                         "role": "user",
-                        "content": AIService._build_category_prompt(answer_summary, answers_data),
+                        "content": AIService._build_result_prompt(answer_summary, answers_data),
                     },
                 ],
-                response_format=AICategoriesResponse,
+                response_format=AIResultsResponse,
             )
 
             result = completion.choices[0].message.parsed
@@ -210,13 +229,13 @@ class AIService:
             return None
 
     @staticmethod
-    def _validate_categories(categories: list) -> bool:
-        if not (4 <= len(categories) <= 6):
+    def _validate_results(results: list) -> bool:
+        if not (4 <= len(results) <= 6):
             return False
-        for cat in categories:
-            if not cat.name or not cat.reasoning:
+        for result in results:
+            if not result.type or not result.value:
                 return False
-            if not re.search(r'\d', cat.reasoning):
+            if not re.search(r'\d', result.value):
                 return False
         return True
 
@@ -253,7 +272,7 @@ class AIService:
         return "\n".join(prompt_parts)
 
     @staticmethod
-    def _build_category_prompt(answer_summary: str, answers_data: dict) -> str:
+    def _build_result_prompt(answer_summary: str, answers_data: dict) -> str:
         prompt_parts = [
             "GROUP ANSWER SUMMARY:\n",
             answer_summary,
@@ -267,8 +286,8 @@ class AIService:
             )
 
         prompt_parts.append(
-            "\n\nBased on this group's preferences and constraints, generate 4–6 category suggestions. "
-            "Each suggestion should explicitly reference the group data that supports it."
+            "\n\nBased on this group's preferences and constraints, generate 4–6 result recommendations. "
+            "Each recommendation should explicitly reference the group data that supports it."
         )
 
         return "\n".join(prompt_parts)

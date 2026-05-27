@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, Text, Enum, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Enum, TIMESTAMP, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -15,13 +15,11 @@ class Session(Base):
     topic          = Column(Text, nullable=False)
     context        = Column(Text, nullable=True)
     state          = Column(Enum(SessionState), nullable=False, default=SessionState.ANSWERING)
-    host_id        = Column(UUID(as_uuid=True), ForeignKey("participants.id", use_alter=True), nullable=True)
-    expected_count = Column(Integer, nullable=False)
-    deadline       = Column(TIMESTAMP, nullable=True)
-    answered_count = Column(Integer, nullable=False, default=0, server_default="0")
+    host_id        = Column(UUID(as_uuid=True), ForeignKey("participants.id", use_alter=True, ondelete="SET NULL"), nullable=True)
+    link_id        = Column(String(10), unique=True, nullable=False)
     created_at     = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     participants     = relationship("Participant", back_populates="session",
                                     foreign_keys="Participant.session_id")
     questions        = relationship("Question", back_populates="session")
-    category_options = relationship("CategoryOption", back_populates="session")
+    results          = relationship("Result", back_populates="session")

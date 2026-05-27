@@ -11,6 +11,8 @@ class Mechanic(str, Enum):
     SLIDER = "SLIDER"
     TEXT = "TEXT"
 
+class ResultType(str, Enum):
+    RECOMMENDATION = "RECOMMENDATION"
 
 NEXT_STATE = {
     SessionState.ANSWERING:  SessionState.GENERATING,
