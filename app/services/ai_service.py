@@ -12,7 +12,8 @@ from app.models.session import Session
 from app.models.question import Question
 from app.schemas.ai import AIQuestion, AIQuestionsResponse, AICategoriesResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
+from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
+from app.services.session_service import SessionService
 from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, CATEGORY_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.question_service import QuestionService
@@ -144,6 +145,7 @@ class AIService:
                     db = SessionLocal()
                     try:
                         CategoryService.save_categories(db, session_id, category_response.categories)
+                        SessionService.advance_session_to_state(db, session_id, SessionState.RESULTS)
                     finally:
                         db.close()
                     return

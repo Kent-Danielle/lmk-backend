@@ -2,7 +2,7 @@ import uuid as _uuid
 
 from sqlalchemy.orm import Session as DBSession
 
-from app.models.swipe import CategoryOption
+from app.models.category import CategoryOption
 from app.schemas.ai import AICategory
 
 

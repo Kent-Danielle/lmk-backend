@@ -14,7 +14,7 @@ class Session(Base):
     id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     topic          = Column(Text, nullable=False)
     context        = Column(Text, nullable=True)
-    state          = Column(Enum(SessionState), nullable=False, default=SessionState.QUESTION_PHASE)
+    state          = Column(Enum(SessionState), nullable=False, default=SessionState.ANSWERING)
     host_id        = Column(UUID(as_uuid=True), ForeignKey("participants.id", use_alter=True), nullable=True)
     expected_count = Column(Integer, nullable=False)
     deadline       = Column(TIMESTAMP, nullable=True)

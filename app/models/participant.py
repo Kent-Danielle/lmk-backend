@@ -19,4 +19,3 @@ class Participant(Base):
     session = relationship("Session", back_populates="participants",
                            foreign_keys=[session_id])
     answers = relationship("Answer", back_populates="participant")
-    swipes  = relationship("Swipe", back_populates="participant")

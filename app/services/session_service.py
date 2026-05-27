@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, HTTPException
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.participant import Participant
-from app.models.swipe import CategoryOption
+from app.models.category import CategoryOption
 from app.schemas.session import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -136,7 +136,7 @@ class SessionService:
         session.state = next_state
         db.commit()
         
-        if next_state == SessionState.REVEAL:
+        if next_state == SessionState.GENERATING:
             background_tasks.add_task(AIService.generate_categories, str(session.id))
 
         categories_ready = (
@@ -151,3 +151,18 @@ class SessionService:
             categories_ready=categories_ready,
         )
 
+    @staticmethod
+    def advance_session_to_state(
+        db: DBSession,
+        session_id: str,
+        state: SessionState
+    ):
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
+        if not session:
+            raise HTTPException(
+                status_code=HTTPStatusCode.NOT_FOUND,
+                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
+        
+        session.state = state
+        db.commit()

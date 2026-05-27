@@ -15,8 +15,8 @@ from app.models.session import Session
 from app.models.participant import Participant
 from app.models.question import Question, QuestionOption
 from app.models.answer import Answer
-from app.models.swipe import CategoryOption, Swipe
-from app.constants import SessionState, Mechanic, SwipeDirection
+from app.models.category import CategoryOption
+from app.constants import SessionState, Mechanic
 
 db = SessionLocal()
 
@@ -29,7 +29,7 @@ def seed_demo():
         id=uuid.uuid4(),
         topic="Saturday hangout",
         context="6 friends, mix of introverts and extroverts, some have cars",
-        state=SessionState.QUESTION_PHASE,
+        state=SessionState.ANSWERING,
         expected_count=6,
         answered_count=0,
     )
@@ -56,7 +56,7 @@ def seed_demo():
 
     # --- Questions ---
     q1 = Question(session_id=session.id, text="Indoor or outdoor?",
-                  mechanic=Mechanic.SWIPE, display_order=1)
+                  mechanic=Mechanic.MULTISELECT, display_order=1)
     q2 = Question(session_id=session.id, text="When works for you?",
                   mechanic=Mechanic.MULTISELECT, display_order=2)
     q3 = Question(session_id=session.id, text="😴 chill vibes → 🔥 high energy",
@@ -70,31 +70,33 @@ def seed_demo():
         db.add(q)
     db.flush()
 
+    for label in ["Indoor", "Outdoor", "Either"]:
+        db.add(QuestionOption(question_id=q1.id, label=label))
     for label in ["Saturday morning", "Saturday afternoon", "Saturday evening",
                   "Sunday morning", "Other / Any"]:
         db.add(QuestionOption(question_id=q2.id, label=label))
     db.flush()
 
     # --- Answers (one set per participant) ---
-    # Format: (q1-swipe, q2-multiselect, q3-energy-slider, q4-budget-slider, q5-text)
+    # Format: (q1-indoor, q2-multiselect, q3-energy-slider, q4-budget-slider, q5-text)
     answer_sets = [
-        ("YES", ["Saturday morning", "Saturday afternoon"], 30, 35, "vegetarian"),
-        ("YES", ["Saturday morning"], 25, 25, "none"),
-        ("YES", ["Saturday afternoon", "Saturday evening"], 60, 50, "none"),
-        ("NO",  ["Saturday morning", "Sunday morning"], 20, 20, "peanut allergy"),
-        ("YES", ["Saturday morning"], 45, 40, "none"),
-        ("YES", ["Saturday morning", "Saturday afternoon"], 35, 30, "no car"),
+        (["Indoor"], ["Saturday morning", "Saturday afternoon"], 30, 35, "vegetarian"),
+        (["Indoor"], ["Saturday morning"], 25, 25, "none"),
+        (["Indoor"], ["Saturday afternoon", "Saturday evening"], 60, 50, "none"),
+        (["Outdoor"], ["Saturday morning", "Sunday morning"], 20, 20, "peanut allergy"),
+        (["Indoor"], ["Saturday morning"], 45, 40, "none"),
+        (["Indoor"], ["Saturday morning", "Saturday afternoon"], 35, 30, "no car"),
     ]
 
-    for p, (swipe, multiselect, energy, budget, text) in zip(participants, answer_sets):
-        db.add(Answer(participant_id=p.id, question_id=q1.id, value=swipe))
+    for p, (indoor, multiselect, energy, budget, text) in zip(participants, answer_sets):
+        db.add(Answer(participant_id=p.id, question_id=q1.id, value=json.dumps(indoor)))
         db.add(Answer(participant_id=p.id, question_id=q2.id, value=json.dumps(multiselect)))
         db.add(Answer(participant_id=p.id, question_id=q3.id, value=json.dumps({"value": energy})))
         db.add(Answer(participant_id=p.id, question_id=q4.id, value=json.dumps({"value": budget})))
         db.add(Answer(participant_id=p.id, question_id=q5.id, value=text))
 
     session.answered_count = 6
-    session.state = SessionState.REVEAL
+    session.state = SessionState.RESULTS
 
     # --- Category options (pre-baked; no AI call needed during demo) ---
     categories = [
@@ -131,25 +133,6 @@ def seed_demo():
         db.add(c)
         cat_objects.append(c)
     db.flush()
-
-    # --- Swipes (tuned to produce a clear Brunch Spot consensus) ---
-    swipe_votes = [
-        # Farmers  Brunch  BoardGame  Hike  Cooking
-        ["YES",   "YES",  "NO",      "YES", "NO"],   # CouchPotato99
-        ["YES",   "YES",  "NO",      "YES", "YES"],  # AlwaysLate_Dan
-        ["NO",    "YES",  "YES",     "NO",  "YES"],  # VetoQueen
-        ["YES",   "YES",  "YES",     "NO",  "NO"],   # BudgetHawk
-        ["YES",   "NO",   "NO",      "YES", "YES"],  # SpontaneousSam
-        ["YES",   "YES",  "NO",      "NO",  "YES"],  # NightOwlNadia
-    ]
-
-    for p, votes in zip(participants, swipe_votes):
-        for cat, vote in zip(cat_objects, votes):
-            db.add(Swipe(
-                participant_id=p.id,
-                category_id=cat.id,
-                direction=SwipeDirection.YES if vote == "YES" else SwipeDirection.NO,
-            ))
 
     session.state = SessionState.RESULTS
     db.commit()

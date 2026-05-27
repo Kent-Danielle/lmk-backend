@@ -8,7 +8,6 @@ QUESTION_GENERATION_SYSTEM_PROMPT = (
     "RULES:\n"
     "- Generate 4 to 6 questions\n"
     "- Vary mechanics: no two consecutive questions may use the same mechanic\n"
-    '- SWIPE: binary yes/no preference (e.g. "Indoor activities?")\n'
     '- MULTISELECT: multiple-choice; always include "Other / Any" as the last option\n'
     '- SLIDER: include emoji anchors in question text (e.g. "Energy level? 😴 → 🔥")\n'
     "- TEXT: use only when you genuinely cannot infer reasonable options\n"
