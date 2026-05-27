@@ -32,7 +32,6 @@ class SessionService:
         session = Session(
             topic=body.topic,
             context=body.context,
-            expected_count=body.expected_count,
         )
         db.add(session)
         db.flush()
@@ -58,7 +57,7 @@ class SessionService:
         return CreateSessionResponse(
             session_id=str(session.id),
             host_participant_id=str(host.id),
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
         )
 
     @staticmethod
@@ -77,8 +76,7 @@ class SessionService:
             topic=session.topic,
             context=session.context,
             state=session.state,
-            expected_count=session.expected_count,
-            answered_count=session.answered_count,
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
             created_at=session.created_at,
         )
 
@@ -101,8 +99,6 @@ class SessionService:
 
         return SessionStateResponse(
             state=session.state,
-            participants_answered=session.answered_count,
-            expected=session.expected_count,
             results_ready=results_ready,
         )
 
@@ -146,8 +142,6 @@ class SessionService:
 
         return SessionStateResponse(
             state=session.state,
-            participants_answered=session.answered_count,
-            expected=session.expected_count,
             results_ready=results_ready,
         )
 

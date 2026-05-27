@@ -22,9 +22,10 @@ ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT = (
 )
 
 RESULT_GENERATION_SYSTEM_PROMPT = (
-    "You generate activity category suggestions for group planning sessions. "
-    "Each category has a name (short label like 'Coffee', 'Pickleball') and reasoning "
+    "You generate activity recommendations for group planning sessions. "
+    'Each result has a type (always "RECOMMENDATION") and a value — a JSON string with two keys: '
+    '"name" (short label like \'Coffee\', \'Pickleball\') and "reasoning" '
     "(1–2 sentences citing specific group data with numbers, e.g. '5/6 participants prefer outdoors', '$20–40 budget range'). "
-    "Rules: Generate 4–6 categories; every reasoning MUST include at least one specific number "
+    "Rules: Generate 4–6 results; every reasoning MUST include at least one specific number "
     "from the group data (counts, fractions, dollar amounts, ranges); never be generic."
 )

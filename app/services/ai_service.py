@@ -214,9 +214,9 @@ class AIService:
         if not (4 <= len(results) <= 6):
             return False
         for result in results:
-            if not result.name or not result.reasoning:
+            if not result.type or not result.value:
                 return False
-            if not re.search(r'\d', result.reasoning):
+            if not re.search(r'\d', result.value):
                 return False
         return True
 
