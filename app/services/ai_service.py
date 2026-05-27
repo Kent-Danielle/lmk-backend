@@ -265,8 +265,8 @@ class AIService:
             )
 
         prompt_parts.append(
-            "\n\nBased on this group's preferences and constraints, generate 4–6 category suggestions. "
-            "Each suggestion should explicitly reference the group data that supports it."
+            "\n\nBased on this group's preferences and constraints, generate 4–6 result recommendations. "
+            "Each recommendation should explicitly reference the group data that supports it."
         )
 
         return "\n".join(prompt_parts)
