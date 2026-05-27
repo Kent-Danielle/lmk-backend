@@ -6,13 +6,16 @@ class SessionState(str, Enum):
     GENERATING = "GENERATING"
     RESULTS    = "RESULTS"
 
+
 class Mechanic(str, Enum):
     MULTISELECT = "MULTISELECT"
     SLIDER = "SLIDER"
     TEXT = "TEXT"
 
+
 class ResultType(str, Enum):
     RECOMMENDATION = "RECOMMENDATION"
+
 
 NEXT_STATE = {
     SessionState.ANSWERING:  SessionState.GENERATING,

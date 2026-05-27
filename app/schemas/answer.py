@@ -1,0 +1,20 @@
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import Column, Text, TIMESTAMP, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+
+from app.db import Base
+
+class Answer(Base):
+    __tablename__ = "answers"
+
+    id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id    = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    display_name  = Column(Text, nullable=False)
+    joined_at     = Column(TIMESTAMP(timezone=True), nullable=False)
+
+    session = relationship("Session", back_populates="participants",
+                           foreign_keys=[session_id])
+    answers = relationship("Answer", back_populates="participant")
+    swipes  = relationship("Swipe", back_populates="participant")

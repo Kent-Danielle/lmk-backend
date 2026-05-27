@@ -1,0 +1,38 @@
+info:
+  name: Submit Answers
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}sessions/{{session_id}}/answers"
+  body:
+    type: json
+    data: |2-
+        {
+          "participant_id": "{{participant_id}}",
+          "answers": [
+            {
+              "question_id": "{{question_id}}",
+              "value": "YES"
+            }
+          ]
+        }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_url
+      value: http://localhost:8000/
+    - name: participant_id
+      value: a793db03-a614-4984-888a-b6e68c634595
+    - name: question_id
+      value: 02443504-4f7d-4b45-836c-d4e788c9a376
+    - name: session_id
+      value: 2d0bcafa-b19f-4f0b-80cb-0ab9cf8fd560
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

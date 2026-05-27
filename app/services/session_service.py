@@ -59,7 +59,7 @@ class SessionService:
         return CreateSessionResponse(
             session_id=str(session.id),
             host_participant_id=str(host.id),
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION.value}/{session.link_id}",
         )
 
     @staticmethod
@@ -78,7 +78,7 @@ class SessionService:
             topic=session.topic,
             context=session.context,
             state=session.state,
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION.value}/{session.link_id}",
             created_at=session.created_at,
         )
 
