@@ -59,7 +59,7 @@ class SessionService:
         return CreateSessionResponse(
             session_id=str(session.id),
             host_participant_id=str(host.id),
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION.value}/{session.link_id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
         )
 
     @staticmethod
@@ -73,12 +73,13 @@ class SessionService:
                 status_code=HTTPStatusCode.NOT_FOUND,
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
             )
+        
         return SessionOut(
             id=str(session.id),
             topic=session.topic,
             context=session.context,
             state=session.state,
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION.value}/{session.link_id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
             created_at=session.created_at,
         )
 
@@ -95,7 +96,7 @@ class SessionService:
             )
         
         results_ready = (
-            db.query(Result).filter(Result.session_id == _uuid.UUID(session_id)).first()
+            db.query(Result).filter(Result.session_id == session).first()
             is not None
         )
 

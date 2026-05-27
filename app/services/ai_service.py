@@ -12,7 +12,7 @@ from app.models.session import Session
 from app.models.question import Question
 from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResultsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES
+from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
 from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, RESULT_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.question_service import QuestionService
@@ -161,6 +161,10 @@ class AIService:
                     db = SessionLocal()
                     try:
                         ResultService.save_results(db, session_id, results_response.results)
+                        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
+                        if session:
+                            session.state = SessionState.RESULTS
+                            db.commit()
                     finally:
                         db.close()
                     return

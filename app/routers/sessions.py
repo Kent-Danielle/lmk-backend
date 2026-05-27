@@ -12,6 +12,7 @@ from app.schemas.session import (
 )
 from app.services.session_service import SessionService
 from app.services.ai_service import AIService
+from app.services.result_service import ResultService
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -65,18 +66,10 @@ async def get_questions(
     return APIResponse(success=True, data=[q.model_dump() for q in data])
 
 
-@router.get("/{session_id}/reveal", response_model=APIResponse)
-async def get_reveal(session_id: str):
-    # TODO: call ResultsService.get_reveal
-    raise HTTPException(
-        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
-        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
-    )
-
 @router.get("/{session_id}/results", response_model=APIResponse)
-async def get_results(session_id: str):
-    # TODO: call AIService.get_results
-    raise HTTPException(
-        status_code=HTTPStatusCode.NOT_IMPLEMENTED,
-        detail=HTTPErrorMessage.NOT_IMPLEMENTED,
-    )
+async def get_results(
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    data = ResultService.get_results(db, session_id)
+    return APIResponse(success=True, data=data.model_dump())
