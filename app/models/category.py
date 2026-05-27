@@ -1,10 +1,9 @@
 import uuid
-from sqlalchemy import Column, Text, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db import Base
-from app.constants import SwipeDirection
 
 
 class CategoryOption(Base):
@@ -16,4 +15,3 @@ class CategoryOption(Base):
     reasoning  = Column(Text, nullable=False)
 
     session = relationship("Session", back_populates="category_options")
-    swipes  = relationship("Swipe", back_populates="category")

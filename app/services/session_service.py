@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, HTTPException
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.participant import Participant
-from app.models.swipe import CategoryOption
+from app.models.category import CategoryOption
 from app.schemas.session import (
     CreateSessionRequest,
     CreateSessionResponse,

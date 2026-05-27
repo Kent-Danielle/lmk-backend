@@ -7,15 +7,9 @@ class SessionState(str, Enum):
     REVEAL = "REVEAL"
 
 class Mechanic(str, Enum):
-    SWIPE = "SWIPE"
     MULTISELECT = "MULTISELECT"
     SLIDER = "SLIDER"
     TEXT = "TEXT"
-
-
-class SwipeDirection(str, Enum):
-    YES = "YES"
-    NO = "NO"
 
 
 NEXT_STATE = {

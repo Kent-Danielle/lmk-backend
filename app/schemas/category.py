@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from app.constants import SwipeDirection
-
 
 class CategoryOptionOut(BaseModel):
     id: str
@@ -11,9 +9,3 @@ class CategoryOptionOut(BaseModel):
 
 class CategoriesResponse(BaseModel):
     categories: list[CategoryOptionOut]
-
-
-class SwipeSubmission(BaseModel):
-    participant_id: str
-    category_id: str
-    direction: SwipeDirection
