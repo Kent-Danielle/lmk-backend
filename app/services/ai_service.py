@@ -34,32 +34,41 @@ class AIService:
         context: str | None,
         host_notes: str | None,
     ) -> None:
+        logger.info("Starting question generation for session %s", session_id)
         user_prompt = AIService._build_user_prompt(topic, context, host_notes)
         total_attempts = AI_MAX_RETRIES + 1
 
         for attempt in range(1, total_attempts + 1):
             try:
+                logger.info("Session %s: question generation attempt %d/%d", session_id, attempt, total_attempts)
                 result_response = AIService._generate_questions_response(_openai_client, user_prompt)
                 if result_response is None:
+                    logger.warning("Session %s: received null response from OpenAI", session_id)
                     return
 
                 if not result_response.valid:
+                    logger.warning("Session %s: response marked as invalid by AI", session_id)
                     return
 
                 if AIService._validate_response(result_response.questions):
+                    logger.info("Session %s: validation passed with %d questions, saving", session_id, len(result_response.questions))
                     db = SessionLocal()
                     try:
                         QuestionService.save_questions(db, session_id, result_response.questions)
                     finally:
                         db.close()
                     return
+                else:
+                    logger.warning("Session %s: validation failed for %d questions", session_id, len(result_response.questions))
 
             except APITimeoutError:
+                logger.warning("Session %s: OpenAI timeout on attempt %d", session_id, attempt)
                 continue
 
             except (APIError, Exception):
                 logger.exception("Question generation failed for session %s on attempt %d", session_id, attempt)
                 return
+        logger.error("Session %s: question generation exhausted all %d attempts", session_id, total_attempts)
 
     @staticmethod
     def get_questions(
@@ -121,39 +130,51 @@ class AIService:
 
     @staticmethod
     def generate_results(session_id: str) -> None:
+        logger.info("Starting result generation for session %s", session_id)
         total_attempts = AI_MAX_RETRIES + 1
 
         for attempt in range(1, total_attempts + 1):
             try:
+                logger.info("Session %s: result generation attempt %d/%d", session_id, attempt, total_attempts)
                 answers_data = AnswerService.fetch_session_answers(session_id)
                 if not answers_data:
+                    logger.warning("Session %s: no answers found, aborting result generation", session_id)
                     return
 
+                logger.info("Session %s: generating answer summary", session_id)
                 answer_summary = AIService._generate_answer_summary(_openai_client, answers_data)
                 if not answer_summary:
+                    logger.warning("Session %s: answer summary generation failed, retrying", session_id)
                     continue
 
+                logger.info("Session %s: generating result response", session_id)
                 results_response = AIService._generate_result_response(
                     _openai_client, answer_summary, answers_data
                 )
 
                 if results_response is None or not results_response.valid:
+                    logger.warning("Session %s: result response null or invalid, retrying", session_id)
                     continue
 
                 if AIService._validate_results(results_response.results):
+                    logger.info("Session %s: validation passed with %d results, saving", session_id, len(results_response.results))
                     db = SessionLocal()
                     try:
                         ResultService.save_results(db, session_id, results_response.results)
                     finally:
                         db.close()
                     return
+                else:
+                    logger.warning("Session %s: validation failed for %d results", session_id, len(results_response.results))
 
             except APITimeoutError:
+                logger.warning("Session %s: OpenAI timeout on attempt %d", session_id, attempt)
                 continue
 
             except (APIError, Exception):
                 logger.exception("Result generation failed for session %s on attempt %d", session_id, attempt)
                 return
+        logger.error("Session %s: result generation exhausted all %d attempts", session_id, total_attempts)
 
     # region Result Generation Helpers
 

@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import FastAPI
 
 from app.middleware.cors import add_cors
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 from app.routers import sessions, participants, answers
 from app.utils.http import HTTPStatusCode
 
