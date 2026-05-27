@@ -13,7 +13,7 @@ runtime:
     - name: base_url
       value: http://localhost:8000/
     - name: session_id
-      value: 1600a1d5-41cb-4122-b479-d1b89c0c805b
+      value: aa3b6930-a9dd-459e-bfb4-10f497705460
 
 settings:
   encodeUrl: true
