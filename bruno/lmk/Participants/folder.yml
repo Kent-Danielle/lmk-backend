@@ -1,0 +1,10 @@
+info:
+  name: Participants
+  type: folder
+  seq: 2
+
+request:
+  auth: inherit
+  variables:
+    - name: base_url
+      value: http://localhost:8000/

@@ -9,4 +9,3 @@ class JoinSessionRequest(BaseModel):
 
 class JoinSessionResponse(BaseModel):
     participant_id: str
-    token: str
