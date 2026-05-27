@@ -15,11 +15,11 @@ class AIQuestionsResponse(BaseModel):
     questions: list[AIQuestion]
 
 
-class AICategory(BaseModel):
-    name: str
-    reasoning: str
+class AIResult(BaseModel):
+    type: str
+    value: str
 
 
-class AICategoriesResponse(BaseModel):
+class AIResultsResponse(BaseModel):
     valid: bool
-    categories: list[AICategory]
+    results: list[AIResult]

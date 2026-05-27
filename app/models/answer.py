@@ -14,8 +14,8 @@ class Answer(Base):
     )
 
     id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    participant_id = Column(UUID(as_uuid=True), ForeignKey("participants.id"), nullable=False)
-    question_id    = Column(UUID(as_uuid=True), ForeignKey("questions.id"), nullable=False)
+    participant_id = Column(UUID(as_uuid=True), ForeignKey("participants.id", ondelete="CASCADE"), nullable=False)
+    question_id    = Column(UUID(as_uuid=True), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
     value          = Column(Text, nullable=False)  # stored as JSON string; parse in service layer
     answered_at    = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 

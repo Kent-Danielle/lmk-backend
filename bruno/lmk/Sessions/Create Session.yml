@@ -10,11 +10,10 @@ http:
     type: json
     data: |2-
         {
-          "topic": "Saturday hangout",
+          "topic": "Where to eat?",
           "context": "6 friends, mix of budgets",
-          "expected_count": 6,
           "host_notes": "Keep it casual",
-          "host_display_name": "EL-J"
+          "host_display_name": "Kent 2"
         }
   auth: inherit
 

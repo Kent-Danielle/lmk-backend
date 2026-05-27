@@ -11,7 +11,7 @@ class Question(Base):
     __tablename__ = "questions"
 
     id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    session_id    = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    session_id    = Column(UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
     text          = Column(Text, nullable=False)
     mechanic      = Column(Enum(Mechanic), nullable=False)
     display_order = Column(Integer, nullable=False)
@@ -25,7 +25,7 @@ class QuestionOption(Base):
     __tablename__ = "question_options"
 
     id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    question_id = Column(UUID(as_uuid=True), ForeignKey("questions.id"), nullable=False)
+    question_id = Column(UUID(as_uuid=True), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
     label       = Column(Text, nullable=False)
 
     question = relationship("Question", back_populates="options")

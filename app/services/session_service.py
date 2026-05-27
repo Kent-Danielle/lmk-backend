@@ -1,3 +1,4 @@
+import secrets
 import uuid as _uuid
 
 from sqlalchemy.orm import Session as DBSession
@@ -6,7 +7,7 @@ from fastapi import BackgroundTasks, HTTPException
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.participant import Participant
-from app.models.swipe import CategoryOption
+from app.models.result import Result
 from app.schemas.session import (
     CreateSessionRequest,
     CreateSessionResponse,
@@ -32,7 +33,7 @@ class SessionService:
         session = Session(
             topic=body.topic,
             context=body.context,
-            expected_count=body.expected_count,
+            link_id=secrets.token_urlsafe(7),
         )
         db.add(session)
         db.flush()
@@ -58,7 +59,7 @@ class SessionService:
         return CreateSessionResponse(
             session_id=str(session.id),
             host_participant_id=str(host.id),
-            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.id}",
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
         )
 
     @staticmethod
@@ -77,8 +78,7 @@ class SessionService:
             topic=session.topic,
             context=session.context,
             state=session.state,
-            expected_count=session.expected_count,
-            answered_count=session.answered_count,
+            join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
             created_at=session.created_at,
         )
 
@@ -94,16 +94,14 @@ class SessionService:
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
             )
         
-        categories_ready = (
-            db.query(CategoryOption).filter(CategoryOption.session_id == _uuid.UUID(session_id)).first()
+        results_ready = (
+            db.query(Result).filter(Result.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
 
         return SessionStateResponse(
             state=session.state,
-            participants_answered=session.answered_count,
-            expected=session.expected_count,
-            categories_ready=categories_ready,
+            results_ready=results_ready,
         )
 
     @staticmethod
@@ -136,18 +134,31 @@ class SessionService:
         session.state = next_state
         db.commit()
         
-        if next_state == SessionState.REVEAL:
-            background_tasks.add_task(AIService.generate_categories, str(session.id))
+        if next_state == SessionState.GENERATING:
+            background_tasks.add_task(AIService.generate_results, str(session.id))
 
-        categories_ready = (
-            db.query(CategoryOption).filter(CategoryOption.session_id == _uuid.UUID(session_id)).first()
+        results_ready = (
+            db.query(Result).filter(Result.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
-        
+
         return SessionStateResponse(
             state=session.state,
-            participants_answered=session.answered_count,
-            expected=session.expected_count,
-            categories_ready=categories_ready,
+            results_ready=results_ready,
         )
 
+    @staticmethod
+    def advance_session_to_state(
+        db: DBSession,
+        session_id: str,
+        state: SessionState
+    ):
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
+        if not session:
+            raise HTTPException(
+                status_code=HTTPStatusCode.NOT_FOUND,
+                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
+        
+        session.state = state
+        db.commit()

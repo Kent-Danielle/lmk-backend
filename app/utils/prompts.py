@@ -8,7 +8,6 @@ QUESTION_GENERATION_SYSTEM_PROMPT = (
     "RULES:\n"
     "- Generate 4 to 6 questions\n"
     "- Vary mechanics: no two consecutive questions may use the same mechanic\n"
-    '- SWIPE: binary yes/no preference (e.g. "Indoor activities?")\n'
     '- MULTISELECT: multiple-choice; always include "Other / Any" as the last option\n'
     '- SLIDER: include emoji anchors in question text (e.g. "Energy level? 😴 → 🔥")\n'
     "- TEXT: use only when you genuinely cannot infer reasonable options\n"
@@ -22,10 +21,11 @@ ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT = (
     "(3) key areas of disagreement, (4) important constraints or limitations."
 )
 
-CATEGORY_GENERATION_SYSTEM_PROMPT = (
-    "You generate activity category suggestions for group planning sessions. "
-    "Each category has a name (short label like 'Coffee', 'Pickleball') and reasoning "
+RESULT_GENERATION_SYSTEM_PROMPT = (
+    "You generate activity recommendations for group planning sessions. "
+    'Each result has a type (always "RECOMMENDATION") and a value — a JSON string with two keys: '
+    '"name" (short label like \'Coffee\', \'Pickleball\') and "reasoning" '
     "(1–2 sentences citing specific group data with numbers, e.g. '5/6 participants prefer outdoors', '$20–40 budget range'). "
-    "Rules: Generate 4–6 categories; every reasoning MUST include at least one specific number "
+    "Rules: Generate 4–6 results; every reasoning MUST include at least one specific number "
     "from the group data (counts, fractions, dollar amounts, ranges); never be generic."
 )
