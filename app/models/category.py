@@ -17,18 +17,3 @@ class CategoryOption(Base):
 
     session = relationship("Session", back_populates="category_options")
     swipes  = relationship("Swipe", back_populates="category")
-
-
-class Swipe(Base):
-    __tablename__ = "swipes"
-    __table_args__ = (
-        UniqueConstraint("participant_id", "category_id", name="uq_swipe_participant_category"),
-    )
-
-    id             = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    participant_id = Column(UUID(as_uuid=True), ForeignKey("participants.id"), nullable=False)
-    category_id    = Column(UUID(as_uuid=True), ForeignKey("category_options.id"), nullable=False)
-    direction      = Column(Enum(SwipeDirection), nullable=False)
-
-    participant = relationship("Participant", back_populates="swipes")
-    category    = relationship("CategoryOption", back_populates="swipes")
