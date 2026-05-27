@@ -21,7 +21,7 @@ ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT = (
     "(3) key areas of disagreement, (4) important constraints or limitations."
 )
 
-CATEGORY_GENERATION_SYSTEM_PROMPT = (
+RESULT_GENERATION_SYSTEM_PROMPT = (
     "You generate activity category suggestions for group planning sessions. "
     "Each category has a name (short label like 'Coffee', 'Pickleball') and reasoning "
     "(1–2 sentences citing specific group data with numbers, e.g. '5/6 participants prefer outdoors', '$20–40 budget range'). "

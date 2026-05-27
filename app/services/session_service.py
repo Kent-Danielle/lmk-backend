@@ -94,7 +94,7 @@ class SessionService:
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
             )
         
-        categories_ready = (
+        results_ready = (
             db.query(Result).filter(Result.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
@@ -103,7 +103,7 @@ class SessionService:
             state=session.state,
             participants_answered=session.answered_count,
             expected=session.expected_count,
-            categories_ready=categories_ready,
+            results_ready=results_ready,
         )
 
     @staticmethod
@@ -137,18 +137,18 @@ class SessionService:
         db.commit()
         
         if next_state == SessionState.GENERATING:
-            background_tasks.add_task(AIService.generate_categories, str(session.id))
+            background_tasks.add_task(AIService.generate_results, str(session.id))
 
-        categories_ready = (
+        results_ready = (
             db.query(Result).filter(Result.session_id == _uuid.UUID(session_id)).first()
             is not None
         )
-        
+
         return SessionStateResponse(
             state=session.state,
             participants_answered=session.answered_count,
             expected=session.expected_count,
-            categories_ready=categories_ready,
+            results_ready=results_ready,
         )
 
     @staticmethod
