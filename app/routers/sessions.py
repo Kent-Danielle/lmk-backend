@@ -29,11 +29,20 @@ async def create_session(
 
 
 @router.get("/link/{link_id}", response_model=APIResponse)
-async def get_session(
+async def get_session_by_link(
     link_id: str,
     db: Session = Depends(get_db)
 ):
     data = SessionService.get_by_link_id(db, link_id)
+    return APIResponse(success=True, data=data.model_dump())
+
+
+@router.get("/{session_id}", response_model=APIResponse)
+async def get_session(
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    data = SessionService.get_by_session_id(db, session_id)
     return APIResponse(success=True, data=data.model_dump())
 
 

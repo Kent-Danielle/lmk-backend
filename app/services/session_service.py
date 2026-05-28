@@ -69,6 +69,20 @@ class SessionService:
         link_id: str
     ) -> SessionInfoResponse:
         session = db.query(Session).filter(Session.link_id == link_id).first()
+        return SessionService._get_session_helper(session)
+    
+    @staticmethod
+    def get_by_session_id(
+        db: DBSession,
+        session_id: str
+    ) -> SessionInfoResponse:
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
+        return SessionService._get_session_helper(session)
+    
+    @staticmethod
+    def _get_session_helper(
+        session: Session
+    ) -> SessionInfoResponse:
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
