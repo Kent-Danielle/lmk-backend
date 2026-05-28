@@ -28,6 +28,7 @@ async def create_session(
     return APIResponse(success=True, data=data.model_dump())
 
 
+# Must be declared before /{session_id} — FastAPI matches in order, and the wildcard would swallow /link/* requests.
 @router.get("/link/{link_id}", response_model=APIResponse)
 async def get_session_by_link(
     link_id: str,
