@@ -13,6 +13,7 @@ from app.models.question import Question
 from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResultsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
 from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
+from app.services import event_manager
 from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, RESULT_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.question_service import QuestionService
@@ -165,6 +166,8 @@ class AIService:
                         if session:
                             session.state = SessionState.RESULTS
                             db.commit()
+
+                            event_manager.publish(session_id, SessionState.RESULTS.value)
                     finally:
                         db.close()
                     return

@@ -1,5 +1,9 @@
+import json
+import asyncio
+
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
+from sse_starlette.sse import EventSourceResponse
 
 from app.db import get_db
 from app.schemas.base import APIResponse
@@ -7,6 +11,7 @@ from app.schemas.session import (
     CreateSessionRequest,
     AdvanceRequest,
 )
+from app.services.event_manager import event_manager
 from app.services.session_service import SessionService
 from app.services.ai_service import AIService
 from app.services.result_service import ResultService
@@ -23,8 +28,7 @@ async def create_session(
     data = SessionService.create(db, body, background_tasks)
     return APIResponse(success=True, data=data.model_dump())
 
-
-# Must be declared before /{session_id} — FastAPI matches in order, and the wildcard would swallow /link/* requests.
+# IMPORTANT: Must be declared before /{session_id} — FastAPI matches in order, and the wildcard would swallow /link/* requests.
 @router.get("/link/{link_id}", response_model=APIResponse)
 async def get_session_by_link(
     link_id: str,
@@ -33,6 +37,35 @@ async def get_session_by_link(
     data = SessionService.get_by_link_id(db, link_id)
     return APIResponse(success=True, data=data.model_dump())
 
+
+# IMPORTANT: declare this BEFORE /{session_id} and after link/{session_id} to avoid route conflicts 
+@router.get("/{session_id}/stream")
+async def stream_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    data = SessionService.get_by_session_id(db, session_id)
+
+    queue = event_manager.subscribe(session_id)
+
+    async def generator():
+        try:
+            yield {
+                "event": "state_change",
+                "data": json.dumps({"state": data.state.value}),
+            }
+
+            while True:
+                state = await queue.get()
+                yield {
+                    "event": "state_change",
+                    "data": json.dumps({"state": state}),
+                }
+        except asyncio.CancelledError:
+            event_manager.unsubscribe(session_id, queue)
+            raise
+
+    return EventSourceResponse(generator())
 
 @router.get("/{session_id}", response_model=APIResponse)
 async def get_session(

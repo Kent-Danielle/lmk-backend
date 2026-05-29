@@ -24,7 +24,7 @@ class ParticipantService:
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
             )
 
-        duplicate = (
+        existing = (
             db.query(Participant)
             .filter(
                 Participant.session_id == session.id,
@@ -32,11 +32,8 @@ class ParticipantService:
             )
             .first()
         )
-        if duplicate:
-            raise HTTPException(
-                status_code=HTTPStatusCode.CONFLICT,
-                detail=HTTPErrorMessage.DISPLAY_NAME_TAKEN,
-            )
+        if existing:
+            return JoinSessionResponse(participant_id=str(existing.id))
 
         participant = Participant(
             session_id=session.id,

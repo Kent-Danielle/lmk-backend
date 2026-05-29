@@ -16,6 +16,7 @@ from app.constants import (
     NEXT_STATE,
     SessionState,
 )
+from app.services import event_manager
 from app.utils.urls import FRONTEND_URL, URLPath
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.ai_service import AIService
@@ -146,6 +147,8 @@ class SessionService:
 
         session.state = next_state
         db.commit()
+
+        event_manager.publish(session_id, next_state.value)
         
         if next_state == SessionState.GENERATING:
             background_tasks.add_task(AIService.generate_results, str(session.id))
@@ -159,19 +162,3 @@ class SessionService:
             state=session.state,
             results_ready=results_ready,
         )
-
-    @staticmethod
-    def advance_session_to_state(
-        db: DBSession,
-        session_id: str,
-        state: SessionState
-    ):
-        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
-        if not session:
-            raise HTTPException(
-                status_code=HTTPStatusCode.NOT_FOUND,
-                detail=HTTPErrorMessage.SESSION_NOT_FOUND,
-            )
-        
-        session.state = state
-        db.commit()
