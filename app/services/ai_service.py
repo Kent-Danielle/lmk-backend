@@ -12,7 +12,7 @@ from app.models.session import Session
 from app.models.question import Question
 from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResultsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
+from app.constants import AI_MAX_QUESTIONS, AI_MIN_QUESTIONS, Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState
 from app.services.event_manager import event_manager
 from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, RESULT_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
@@ -293,7 +293,7 @@ class AIService:
             )
 
         prompt_parts.append(
-            "\n\nBased on this group's preferences and constraints, generate 4–6 result recommendations. "
+            f"\n\nBased on this group's preferences and constraints, generate {AI_MIN_QUESTIONS}–{AI_MAX_QUESTIONS} result recommendations. "
             "Each recommendation should explicitly reference the group data that supports it."
         )
 
@@ -316,12 +316,8 @@ class AIService:
 
     @staticmethod
     def _validate_response(questions: list[AIQuestion]) -> bool:
-        if not (4 <= len(questions) <= 6):
+        if not (AI_MIN_QUESTIONS <= len(questions) <= AI_MAX_QUESTIONS):
             return False
-
-        for i in range(1, len(questions)):
-            if questions[i].mechanic == questions[i - 1].mechanic:
-                return False
 
         for q in questions:
             if q.mechanic == Mechanic.MULTISELECT:
