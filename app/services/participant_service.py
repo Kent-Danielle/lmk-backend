@@ -12,12 +12,12 @@ from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 
 class ParticipantService:
     @staticmethod
-    def join(
+    def join_by_link_id(
         db: DBSession,
-        session_id: str,
+        link_id: str,
         body: JoinSessionRequest,
     ) -> JoinSessionResponse:
-        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
+        session = db.query(Session).filter(Session.link_id == link_id).first()
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,

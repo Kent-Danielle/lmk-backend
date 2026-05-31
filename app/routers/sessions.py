@@ -28,16 +28,6 @@ async def create_session(
     data = SessionService.create(db, body, background_tasks)
     return APIResponse(success=True, data=data.model_dump())
 
-# IMPORTANT: Must be declared before /{session_id} — FastAPI matches in order, and the wildcard would swallow /link/* requests.
-@router.get("/link/{link_id}", response_model=APIResponse)
-async def get_session_by_link(
-    link_id: str,
-    db: Session = Depends(get_db)
-):
-    data = SessionService.get_by_link_id(db, link_id)
-    return APIResponse(success=True, data=data.model_dump())
-
-
 # IMPORTANT: declare this BEFORE /{session_id} and after link/{session_id} to avoid route conflicts 
 @router.get("/{session_id}/stream")
 async def stream_session(

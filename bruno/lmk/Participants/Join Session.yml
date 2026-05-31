@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{base_url}}sessions/{{session_id}}/participants"
+  url: "{{base_url}}sessions/{{link_id}}/participants"
   body:
     type: json
     data: |2-
@@ -18,8 +18,8 @@ runtime:
   variables:
     - name: base_url
       value: http://localhost:8000/
-    - name: session_id
-      value: 2d0bcafa-b19f-4f0b-80cb-0ab9cf8fd560
+    - name: link_id
+      value: HIj9xEG6Gw
 
 settings:
   encodeUrl: true
