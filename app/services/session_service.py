@@ -91,7 +91,7 @@ class SessionService:
             state=session.state,
             join_link=f"{FRONTEND_URL}{URLPath.JOIN_SESSION}/{session.link_id}",
             created_at=session.created_at,
-            host_participant_id=str(session.host_id),
+            host_id=str(session.host_id),
         )
 
     @staticmethod

@@ -18,7 +18,7 @@ class SessionInfoResponse(BaseModel):
     state: SessionState
     join_link: str
     created_at: datetime
-    host_participant_id: str
+    host_id: str
 
 
 class CreateSessionResponse(BaseModel):
