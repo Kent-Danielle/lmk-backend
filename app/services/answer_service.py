@@ -14,6 +14,7 @@ from app.db import SessionLocal
 from app.models.session import Session
 from app.schemas.question import SubmitAnswersRequest
 from app.utils.http import HTTPErrorMessage, HTTPStatusCode
+from app.services.participant_service import ParticipantService
 
 
 def _validate_answer(mechanic, value) -> str:
@@ -82,6 +83,12 @@ class AnswerService:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
+
+        if ParticipantService.has_answered(db, session_id, body.participant_id):
+            raise HTTPException(
+                status_code=HTTPStatusCode.CONFLICT,
+                detail=HTTPErrorMessage.PARTICIPANT_ALREADY_ANSWERED,
             )
 
         questions = {
