@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{base_url}}sessions/{{link_id}}/answers"
+  url: "{{base_url}}sessions/{{session_id}}/answers"
   body:
     type: json
     data: |2-
@@ -28,8 +28,8 @@ runtime:
       value: a793db03-a614-4984-888a-b6e68c634595
     - name: question_id
       value: 02443504-4f7d-4b45-836c-d4e788c9a376
-    - name: link_id
-      value: HIj9xEG6Gw
+    - name: session_id
+      value: 2d0bcafa-b19f-4f0b-80cb-0ab9cf8fd560
 
 settings:
   encodeUrl: true

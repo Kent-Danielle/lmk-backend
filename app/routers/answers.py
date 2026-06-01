@@ -6,14 +6,14 @@ from app.schemas.base import APIResponse
 from app.schemas.question import SubmitAnswersRequest
 from app.services.answer_service import AnswerService
 
-router = APIRouter(prefix="/sessions/{link_id}", tags=["answers"])
+router = APIRouter(prefix="/sessions/{session_id}", tags=["answers"])
 
 
 @router.post("/answers", response_model=APIResponse)
 async def submit_answers(
-    link_id: str,
+    session_id: str,
     body: SubmitAnswersRequest,
     db: Session = Depends(get_db),
 ):
-    data = AnswerService.submit_answers(db, link_id, body)
+    data = AnswerService.submit_answers(db, session_id, body)
     return APIResponse(success=True, data=data)

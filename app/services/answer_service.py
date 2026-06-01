@@ -74,10 +74,10 @@ class AnswerService:
     @staticmethod
     def submit_answers(
         db: DBSession,
-        link_id: str,
+        session_id: str,
         body: SubmitAnswersRequest,
     ) -> dict:
-        session = db.query(Session).filter(Session.link_id == link_id).first()
+        session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
         if not session:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
