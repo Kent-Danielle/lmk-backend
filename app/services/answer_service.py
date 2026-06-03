@@ -15,6 +15,7 @@ from app.models.session import Session
 from app.schemas.question import SubmitAnswersRequest
 from app.utils.http import HTTPErrorMessage, HTTPStatusCode
 from app.services.participant_service import ParticipantService
+from app.services.pendo_service import pendo_track
 
 
 def _validate_answer(mechanic, value) -> str:
@@ -121,6 +122,22 @@ class AnswerService:
                 raise
 
         db.commit()
+
+        mechanic_types = list({str(questions[a.question_id].mechanic.value) for a in body.answers if a.question_id in questions})
+
+        pendo_track(
+            "answers_submitted",
+            visitor_id=body.participant_id,
+            account_id=session_id,
+            properties={
+                "session_id": session_id,
+                "participant_id": body.participant_id,
+                "submitted_count": submitted,
+                "question_count": len(questions),
+                "mechanic_types": ",".join(mechanic_types),
+            },
+        )
+
         return {
             "submitted": submitted
         }

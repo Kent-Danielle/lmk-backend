@@ -10,6 +10,7 @@ from app.models.answer import Answer
 from app.models.question import Question
 from app.schemas.participant import JoinSessionRequest, JoinSessionResponse
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
+from app.services.pendo_service import pendo_track
 
 
 class ParticipantService:
@@ -44,6 +45,17 @@ class ParticipantService:
         )
         db.add(participant)
         db.commit()
+
+        pendo_track(
+            "participant_joined",
+            visitor_id=str(participant.id),
+            account_id=str(session.id),
+            properties={
+                "session_id": str(session.id),
+                "participant_id": str(participant.id),
+                "is_new_participant": True,
+            },
+        )
 
         return JoinSessionResponse(participant_id=str(participant.id), session_id=str(session.id))
 
