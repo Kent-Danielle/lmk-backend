@@ -16,6 +16,7 @@ from app.services.session_service import SessionService
 from app.services.ai_service import AIService
 from app.services.result_service import ResultService
 from app.services.participant_service import ParticipantService
+from app.services.pendo_service import pendo_track
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -35,6 +36,16 @@ async def stream_session(
     db: Session = Depends(get_db),
 ):
     data = SessionService.get_by_session_id(db, session_id)
+
+    pendo_track(
+        "session_state_subscribed",
+        visitor_id="system",
+        account_id=session_id,
+        properties={
+            "session_id": session_id,
+            "current_state": data.state.value,
+        },
+    )
 
     queue = event_manager.subscribe(session_id)
 
@@ -116,4 +127,15 @@ async def get_results(
     db: Session = Depends(get_db),
 ):
     data = ResultService.get_results(db, session_id)
+
+    pendo_track(
+        "results_viewed",
+        visitor_id="system",
+        account_id=session_id,
+        properties={
+            "session_id": session_id,
+            "result_count": len(data.results),
+        },
+    )
+
     return APIResponse(success=True, data=data.model_dump())

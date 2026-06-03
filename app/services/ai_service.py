@@ -1,3 +1,4 @@
+import json
 import re
 import uuid as _uuid
 import logging
@@ -19,6 +20,7 @@ from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.question_service import QuestionService
 from app.services.result_service import ResultService
 from app.services.answer_service import AnswerService
+from app.services.pendo_service import pendo_track
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,23 @@ class AIService:
                         QuestionService.save_questions(db, session_id, result_response.questions)
                     finally:
                         db.close()
+
+                    mechanic_counts = {}
+                    for q in result_response.questions:
+                        m = q.mechanic.value if hasattr(q.mechanic, "value") else str(q.mechanic)
+                        mechanic_counts[m] = mechanic_counts.get(m, 0) + 1
+
+                    pendo_track(
+                        "questions_generated",
+                        visitor_id="system",
+                        account_id=session_id,
+                        properties={
+                            "session_id": session_id,
+                            "question_count": len(result_response.questions),
+                            "attempt_number": attempt,
+                            "mechanic_distribution": json.dumps(mechanic_counts),
+                        },
+                    )
                     return True
                 else:
                     logger.warning("Session %s: validation failed for %d questions", session_id, len(result_response.questions))
@@ -171,6 +190,19 @@ class AIService:
                             event_manager.publish(session_id, SessionState.RESULTS.value)
                     finally:
                         db.close()
+
+                    pendo_track(
+                        "results_generated",
+                        visitor_id="system",
+                        account_id=session_id,
+                        properties={
+                            "session_id": session_id,
+                            "result_count": len(results_response.results),
+                            "participant_count": answers_data.get("participant_count", 0),
+                            "attempt_number": attempt,
+                            "answer_count": len(answers_data.get("answers", [])),
+                        },
+                    )
                     return
                 else:
                     logger.warning("Session %s: validation failed for %d results", session_id, len(results_response.results))
@@ -183,6 +215,17 @@ class AIService:
                 logger.exception("Result generation failed for session %s on attempt %d", session_id, attempt)
                 return
         logger.error("Session %s: result generation exhausted all %d attempts", session_id, total_attempts)
+        pendo_track(
+            "result_generation_failed",
+            visitor_id="system",
+            account_id=session_id,
+            properties={
+                "session_id": session_id,
+                "failure_reason": "exhausted_retries",
+                "attempts_made": total_attempts,
+                "had_answers": True,
+            },
+        )
 
     # region Result Generation Helpers
 

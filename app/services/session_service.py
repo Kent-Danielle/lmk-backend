@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session as DBSession
 from fastapi import BackgroundTasks, HTTPException
 from app.models.session import Session
 from app.models.participant import Participant
+from app.models.question import Question
 from app.models.result import Result
 from app.schemas.session import (
     CreateSessionRequest,
@@ -20,6 +21,7 @@ from app.services.event_manager import event_manager
 from app.utils.urls import FRONTEND_URL, URLPath
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.ai_service import AIService
+from app.services.pendo_service import pendo_track
 
 
 class SessionService:
@@ -53,12 +55,36 @@ class SessionService:
         )
 
         if not success:
+            pendo_track(
+                "session_creation_failed",
+                visitor_id=str(host.id),
+                account_id=str(session.id),
+                properties={
+                    "topic": body.topic[:100],
+                    "has_context": bool(body.context),
+                },
+            )
             db.delete(session)
             db.commit()
             raise HTTPException(
                 status_code=HTTPStatusCode.INTERNAL_SERVER_ERROR,
                 detail=HTTPErrorMessage.QUESTIONS_GENERATION_FAILED,
             )
+
+        questions = db.query(Question).filter(Question.session_id == session.id).all()
+
+        pendo_track(
+            "session_created",
+            visitor_id=str(host.id),
+            account_id=str(session.id),
+            properties={
+                "session_id": str(session.id),
+                "topic": body.topic[:100],
+                "has_context": bool(body.context),
+                "question_count": len(questions),
+                "link_id": session.link_id,
+            },
+        )
 
         return CreateSessionResponse(
             session_id=str(session.id),
@@ -143,12 +169,24 @@ class SessionService:
                 detail=HTTPErrorMessage.CANNOT_ADVANCE_FROM_STATE,
             )
 
+        previous_state = session.state
         session.state = next_state
         db.commit()
 
         event_manager.publish(session_id, next_state.value)
-        
+
         if next_state == SessionState.GENERATING:
+            pendo_track(
+                "session_advanced_to_generating",
+                visitor_id=participant_id,
+                account_id=session_id,
+                properties={
+                    "session_id": session_id,
+                    "participant_id": participant_id,
+                    "previous_state": previous_state.value,
+                    "new_state": next_state.value,
+                },
+            )
             background_tasks.add_task(AIService.generate_results, str(session.id))
 
         results_ready = (
