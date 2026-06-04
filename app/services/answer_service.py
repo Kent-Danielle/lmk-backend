@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+from unicodedata import numeric
 import uuid as _uuid
 
 from fastapi import HTTPException
@@ -23,6 +24,10 @@ def _validate_answer(mechanic, value) -> str:
         if not isinstance(value, str) or not value.strip():
             raise HTTPException(status_code=400, detail="TEXT must be a non-empty string.")
         return value
+    if mechanic == Mechanic.NUMBER:
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise HTTPException(status_code=400, detail="NUMBER must be an integer.")
+        return str(value)
     if mechanic == Mechanic.MULTISELECT:
         if not isinstance(value, list):
             raise HTTPException(status_code=400, detail="MULTISELECT must be an array.")

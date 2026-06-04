@@ -12,6 +12,7 @@ class Mechanic(str, Enum):
     SLIDER = "SLIDER"
     TEXT = "TEXT"
     SWIPE = "SWIPE"
+    NUMBER = "NUMBER"
     
 
 
