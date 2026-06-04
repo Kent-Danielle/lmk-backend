@@ -13,7 +13,7 @@ Each Question:
 # Per-mechanic shape
 
 NUMBER:
-  - text:     a number input reserved for budget/money
+  - text:     a number input reserved for budget/money. MUST include a currency/unit hint and a suggested range in the question text (e.g. "How much (in $) per person? (e.g. 20–80)"). Adapt the currency symbol to the group's detected locale ($ USD, £ GBP, € EUR, ¥ JPY, R$ BRL, etc.).
   - options:  None
 
 MULTISELECT
@@ -83,12 +83,16 @@ RESULT_GENERATION_SYSTEM_PROMPT = """You generate activity recommendations for a
 
 # Localization & Cost Tier
 
-Express cost as a tier symbol only — never quote exact prices:
-  $     = budget
-  $$    = average / mid-range
-  $$$   = expensive / premium
+Express cost as a tier symbol only — never quote exact prices.
+Use the locale-appropriate currency symbol detected from the group's location:
+  USD → $, $$ , $$$
+  GBP → £, ££, £££
+  EUR → €, €€, €€€
+  JPY → ¥, ¥¥, ¥¥¥
+  BRL → R$, R$$, R$$$
+  (default to $ if locale is unknown)
 
-Always use $ regardless of locale/currency
+One tier symbol per recommendation. Never mix symbols in a single result set.
 
 # Real Place Grounding
 
