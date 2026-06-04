@@ -22,8 +22,8 @@ class QuestionService:
                 db.flush()
 
                 if len(q.options) > 0:
-                    for label in q.options:
-                        db.add(QuestionOption(question_id=question.id, label=label))
+                    for order, label in enumerate(q.options, start=1):
+                        db.add(QuestionOption(question_id=question.id, label=label, display_order=order))
 
             db.commit()
         except Exception:

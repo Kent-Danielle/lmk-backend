@@ -126,7 +126,7 @@ class AIService:
                 mechanic=q.mechanic,
                 display_order=q.display_order,
                 options=[
-                    QuestionOptionOut(id=str(o.id), label=o.label)
+                    QuestionOptionOut(id=str(o.id), label=o.label, display_order=o.display_order)
                     for o in q.options
                 ],
             )
