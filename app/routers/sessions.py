@@ -125,6 +125,22 @@ async def has_participant_answered(
     answered = ParticipantService.has_answered(db, session_id, participant_id)
     return APIResponse(success=True, data={"answered": answered})
 
+@router.get("/{session_id}/participants/answered", response_model=APIResponse)
+async def get_answered_participants(
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    data = ParticipantService.get_all_participants_answered(db, session_id)
+    return APIResponse(success=True, data=data)
+
+@router.get("/{session_id}/results_ready", response_model=APIResponse)
+async def get_participants_answered(
+    session_id: str,
+    db: Session = Depends(get_db),
+):
+    ready = ResultService.are_results_ready(db, session_id)
+    return APIResponse(success=True, data={"results_ready": ready}
+)
 
 @router.get("/{session_id}/results", response_model=APIResponse)
 async def get_results(

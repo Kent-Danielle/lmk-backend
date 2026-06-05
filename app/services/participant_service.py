@@ -12,7 +12,6 @@ from app.schemas.participant import JoinSessionRequest, JoinSessionResponse
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
 from app.services.pendo_service import pendo_track
 
-
 class ParticipantService:
     @staticmethod
     def join_by_link_id(
@@ -74,3 +73,14 @@ class ParticipantService:
             )
             .first()
         ) is not None
+
+    @staticmethod
+    def get_all_participants_answered(db: DBSession, session_id: str) -> list:
+        participants = (
+            db.query(Participant)
+            .filter(Participant.session_id == _uuid.UUID(session_id))
+            .join(Answer, Answer.participant_id == Participant.id)
+            .distinct()
+            .all()
+        )
+        return [{"participant_id": str(p.id), "display_name": p.display_name} for p in participants]
