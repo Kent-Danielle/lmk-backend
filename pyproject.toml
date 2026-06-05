@@ -20,7 +20,8 @@ dependencies = [
     "openai (>=2.38.0,<3.0.0)",
     "pydantic (>=2.13.4,<3.0.0)",
     "sse-starlette (>=3.4.4,<4.0.0)",
-    "slowapi (>=0.1.9) ; python_version >= \"3.13\" and python_version < \"4.0\""
+    "slowapi (>=0.1.9) ; python_version >= \"3.13\" and python_version < \"4.0\"",
+    "gunicorn (>=23.0.0,<24.0.0)"
 ]
 
 
