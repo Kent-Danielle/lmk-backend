@@ -10,7 +10,7 @@ from app.models.answer import Answer
 from app.models.question import Question
 from app.schemas.participant import JoinSessionRequest, JoinSessionResponse
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
-from app.constants import MAX_PARTICIPANTS
+from app.constants import MAX_PARTICIPANTS, SessionState
 from app.services.pendo_service import pendo_track
 
 class ParticipantService:
@@ -28,6 +28,16 @@ class ParticipantService:
             )
 
         if session.state == SessionState.RESULTS:
+            pendo_track(
+                "participant_join_blocked",
+                visitor_id="anonymous",
+                account_id=str(session.id),
+                properties={
+                    "session_id": str(session.id),
+                    "block_reason": "session_closed",
+                    "link_id": link_id,
+                },
+            )
             raise HTTPException(
                 status_code=HTTPStatusCode.FORBIDDEN,
                 detail=HTTPErrorMessage.SESSION_CLOSED,
@@ -50,6 +60,16 @@ class ParticipantService:
             .count()
         )
         if participant_count >= MAX_PARTICIPANTS:
+            pendo_track(
+                "participant_join_blocked",
+                visitor_id="anonymous",
+                account_id=str(session.id),
+                properties={
+                    "session_id": str(session.id),
+                    "block_reason": "session_full",
+                    "link_id": link_id,
+                },
+            )
             raise HTTPException(
                 status_code=HTTPStatusCode.FORBIDDEN,
                 detail=HTTPErrorMessage.SESSION_FULL,
