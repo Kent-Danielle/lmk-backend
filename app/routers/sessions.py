@@ -133,15 +133,6 @@ async def get_answered_participants(
     data = ParticipantService.get_all_participants_answered(db, session_id)
     return APIResponse(success=True, data=data)
 
-@router.get("/{session_id}/results_ready", response_model=APIResponse)
-async def get_participants_answered(
-    session_id: str,
-    db: Session = Depends(get_db),
-):
-    ready = ResultService.are_results_ready(db, session_id)
-    return APIResponse(success=True, data={"results_ready": ready}
-)
-
 @router.get("/{session_id}/results", response_model=APIResponse)
 async def get_results(
     session_id: str,
