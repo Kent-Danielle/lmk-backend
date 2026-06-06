@@ -11,9 +11,10 @@ from app.config import OPENAI_API_KEY, OPENAI_MODEL
 from app.db import SessionLocal
 from app.models.session import Session
 from app.models.question import Question
-from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResult, AIResultsResponse
+from app.schemas.ai import AIQuestion, AIQuestionsResponse, AIResultsResponse
 from app.schemas.question import QuestionOut, QuestionOptionOut
-from app.constants import AI_MAX_QUESTIONS, AI_MIN_QUESTIONS, Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState, ResultType
+from app.constants import AI_MAX_QUESTIONS, AI_MIN_QUESTIONS, Mechanic, AI_TIMEOUT_SECONDS, AI_MAX_RETRIES, SessionState, ResultType, MAX_NAME_LEN, MAX_ANSWER_TEXT_LEN, MAX_TOPIC_LEN, MAX_CONTEXT_LEN
+from app.utils.sanitize import sanitize
 from app.services.event_manager import event_manager
 from app.utils.prompts import ANSWER_SUMMARY_GENERATION_SYSTEM_PROMPT, RESULT_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_SYSTEM_PROMPT
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
@@ -170,14 +171,9 @@ class AIService:
                         logger.warning("Session %s: answer summary generation failed, retrying", session_id)
                         continue
 
-                    overall_result = AIService._extract_overall_result(answer_summary)
-                    if not overall_result:
-                        logger.warning("Session %s: OVERALL extraction failed, retrying", session_id)
-                        continue
-
                     logger.info("Session %s: generating result response", session_id)
                     results_response = AIService._generate_result_response(
-                        _openai_client, answer_summary, answers_data, overall_result
+                        _openai_client, answer_summary, answers_data
                     )
 
                     if results_response is None or not results_response.valid:
@@ -185,11 +181,15 @@ class AIService:
                         continue
 
                     if AIService._validate_results(results_response.results):
-                        all_results = [overall_result] + results_response.results
-                        logger.info("Session %s: validation passed with %d results (%d recommendations), saving", session_id, len(all_results), len(results_response.results))
+                        logger.info(
+                            "Session %s: validation passed with %d results (%d recommendations), saving",
+                            session_id,
+                            len(results_response.results),
+                            len([r for r in results_response.results if r.type == ResultType.RECOMMENDATION.value]),
+                        )
                         db = SessionLocal()
                         try:
-                            ResultService.save_results(db, session_id, all_results)
+                            ResultService.save_results(db, session_id, results_response.results)
                             session = db.query(Session).filter(Session.id == _uuid.UUID(session_id)).first()
                             if session:
                                 session.state = SessionState.RESULTS
@@ -205,7 +205,7 @@ class AIService:
                             account_id=session_id,
                             properties={
                                 "session_id": session_id,
-                                "result_count": len(all_results),
+                                "result_count": len(results_response.results),
                                 "participant_count": answers_data.get("participant_count", 0),
                                 "attempt_number": attempt,
                                 "answer_count": len(answers_data.get("answers", [])),
@@ -268,7 +268,7 @@ class AIService:
 
     @staticmethod
     def _generate_result_response(
-        client: OpenAI, answer_summary: str, answers_data: dict, overall: AIResult | None = None
+        client: OpenAI, answer_summary: str, answers_data: dict
     ) -> AIResultsResponse | None:
         try:
             completion = client.beta.chat.completions.parse(
@@ -280,7 +280,7 @@ class AIService:
                     },
                     {
                         "role": "user",
-                        "content": AIService._build_result_prompt(answer_summary, answers_data, overall),
+                        "content": AIService._build_result_prompt(answer_summary, answers_data),
                     },
                 ],
                 response_format=AIResultsResponse,
@@ -294,7 +294,10 @@ class AIService:
 
     @staticmethod
     def _validate_results(results: list) -> bool:
+        overall = [r for r in results if r.type == ResultType.OVERALL.value]
         recommendations = [r for r in results if r.type == ResultType.RECOMMENDATION.value]
+        if len(overall) != 1:
+            return False
         if not (4 <= len(recommendations) <= 6):
             return False
         for result in recommendations:
@@ -306,7 +309,6 @@ class AIService:
 
     @staticmethod
     def _compute_question_stats(answers_by_question: dict) -> str:
-        """Pre-compute aggregate statistics for SLIDER, NUMBER, MULTISELECT, and SWIPE questions."""
         lines: list[str] = []
 
         for (q_text, mechanic), values in answers_by_question.items():
@@ -381,35 +383,13 @@ class AIService:
         return "PRE-CALCULATED STATISTICS (use these directly):\n" + "\n".join(lines)
 
     @staticmethod
-    def _extract_overall_result(summary: str) -> AIResult | None:
-        """Parse the CONSENSUS_RESULT tag from the answer summary and return an OVERALL AIResult."""
-        match = re.search(r'CONSENSUS_RESULT:\s*\{', summary)
-        if not match:
-            logger.warning("CONSENSUS_RESULT tag not found in answer summary")
-            return None
-        try:
-            data, _ = json.JSONDecoder().raw_decode(summary, match.end() - 1)
-            return AIResult(
-                type=ResultType.OVERALL.value,
-                value=json.dumps({
-                    "is_agreement": bool(data["is_agreement"]),
-                    "key_insight": str(data["key_insight"]),
-                }),
-            )
-        except (json.JSONDecodeError, KeyError, TypeError):
-            logger.warning("Failed to parse CONSENSUS_RESULT JSON from answer summary")
-            return None
-
-    @staticmethod
     def _build_summary_prompt(answers_data: dict) -> str:
         answers = answers_data["answers"]
         participant_count = answers_data["participant_count"]
 
-        # Stable anonymous tokens so the same participant is consistent across questions
         participant_ids = sorted(set(a["participant_id"] for a in answers))
         anon_map = {pid: f"Participant {i + 1}" for i, pid in enumerate(participant_ids)}
 
-        # Group raw values by (question_text, mechanic) for stat computation
         answers_by_question: dict[tuple, list] = {}
         answers_by_q_text: dict[str, list] = {}
         for answer in answers:
@@ -429,13 +409,12 @@ class AIService:
             mechanic = q_answers[0]["question_mechanic"] if q_answers else ""
             prompt_parts.append(f"\nQ: {q_text}")
             if mechanic == Mechanic.TEXT.value:
-                # No attribution for open-text — numbered list only
                 for i, answer in enumerate(q_answers, start=1):
-                    prompt_parts.append(f"  [{i}] {answer['value']}")
+                    prompt_parts.append(f"  [{i}] [ANSWER]: {sanitize(str(answer['value']), MAX_ANSWER_TEXT_LEN)}")
             else:
                 for answer in q_answers:
                     anon = anon_map.get(answer["participant_id"], "Participant ?")
-                    prompt_parts.append(f"  - {anon}: {answer['value']}")
+                    prompt_parts.append(f"  - [NAME]: {anon} | [ANSWER]: {sanitize(str(answer['value']), MAX_ANSWER_TEXT_LEN)}")
 
         prompt_parts.append(
             "\n\nProvide a structured summary that highlights the group's collective preferences, "
@@ -445,7 +424,7 @@ class AIService:
         return "\n".join(prompt_parts)
 
     @staticmethod
-    def _build_result_prompt(answer_summary: str, answers_data: dict, overall: AIResult | None = None) -> str:
+    def _build_result_prompt(answer_summary: str, answers_data: dict) -> str:
         answers = answers_data["answers"]
 
         participant_ids = sorted(set(a["participant_id"] for a in answers))
@@ -460,23 +439,13 @@ class AIService:
         for answer in answers:
             mechanic = answer["question_mechanic"]
             if mechanic == Mechanic.TEXT.value:
-                prompt_parts.append(f"- [Anonymous] [TEXT]: {answer['value']}")
+                prompt_parts.append(f"- [Anonymous] [TEXT]: {sanitize(str(answer['value']), MAX_ANSWER_TEXT_LEN)}")
             else:
                 anon = anon_map.get(answer["participant_id"], "Participant ?")
-                prompt_parts.append(f"- {anon} [{mechanic}]: {answer['value']}")
-
-        if overall:
-            try:
-                overall_data = json.loads(overall.value)
-                consensus_label = "YES" if overall_data.get("is_agreement") else "NO"
-                prompt_parts.append(
-                    f"\n\nOVERALL CONSENSUS: {consensus_label} — {overall_data.get('key_insight', '')}"
-                )
-            except (json.JSONDecodeError, TypeError):
-                pass
+                prompt_parts.append(f"- [NAME]: {anon} | [TYPE]: {mechanic} | [ANSWER]: {sanitize(str(answer['value']), MAX_ANSWER_TEXT_LEN)}")
 
         prompt_parts.append(
-            "\n\nBased on this group's preferences and constraints, generate 4–6 RECOMMENDATION results. "
+            "\n\nBased on this group's preferences and constraints, generate 1 OVERALL result followed by 4–6 RECOMMENDATION results. "
             "Each recommendation should explicitly reference the group data that supports it."
         )
 
@@ -505,9 +474,9 @@ class AIService:
     def _build_user_prompt(
         topic: str, context: str | None,
     ) -> str:
-        parts = [f"Topic: {topic}"]
+        parts = [f"[TOPIC]: {sanitize(topic, MAX_TOPIC_LEN)}"]
         if context:
-            parts.append(f"Context: {context}")
+            parts.append(f"[CONTEXT]: {sanitize(context, MAX_CONTEXT_LEN)}")
         return "\n".join(parts)
 
     @staticmethod
@@ -522,11 +491,10 @@ class AIService:
                 last = q.options[-1].strip().lower().replace(" ", "")
                 if last != "other/any":
                     return False
-                
+
             if q.mechanic == Mechanic.SWIPE:
                 if not q.options or len(q.options) != 2:
                     return False
-                
 
         return True
 

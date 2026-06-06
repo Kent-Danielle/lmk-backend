@@ -63,6 +63,19 @@ idna = ">=2.8"
 trio = ["trio (>=0.32.0)"]
 
 [[package]]
+name = "better-profanity"
+version = "0.7.0"
+description = "Blazingly fast cleaning swear words (and their leetspeak) in strings"
+optional = false
+python-versions = "==3.*"
+groups = ["main"]
+markers = "python_version < \"4\""
+files = [
+    {file = "better_profanity-0.7.0-py3-none-any.whl", hash = "sha256:bd4c529ea6aa2db1aaa50524be1ed14d0fe5c664f1fd88c8bc388c7e9f9f00e8"},
+    {file = "better_profanity-0.7.0.tar.gz", hash = "sha256:8a6fdc8606d7471e7b5f6801917eca98ec211098262e82f62da4f5de3a73145b"},
+]
+
+[[package]]
 name = "certifi"
 version = "2026.5.20"
 description = "Python package for providing Mozilla's CA Bundle."
