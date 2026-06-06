@@ -14,5 +14,5 @@ class Result(Base):
     session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
     type = Column(Enum(ResultType), nullable=False)
     value = Column(Text, nullable=False)  # stored as JSON string; parse in service layer
-    
+
     session = relationship("Session", back_populates="results")

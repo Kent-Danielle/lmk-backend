@@ -7,6 +7,7 @@ from app.constants import Mechanic
 class QuestionOptionOut(BaseModel):
     id: str
     label: str
+    display_order: int
 
 
 class QuestionOut(BaseModel):

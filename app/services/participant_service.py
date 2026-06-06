@@ -10,6 +10,7 @@ from app.models.answer import Answer
 from app.models.question import Question
 from app.schemas.participant import JoinSessionRequest, JoinSessionResponse
 from app.utils.http import HTTPStatusCode, HTTPErrorMessage
+from app.constants import SessionState
 from app.services.pendo_service import pendo_track
 
 
@@ -25,6 +26,12 @@ class ParticipantService:
             raise HTTPException(
                 status_code=HTTPStatusCode.NOT_FOUND,
                 detail=HTTPErrorMessage.SESSION_NOT_FOUND,
+            )
+
+        if session.state == SessionState.RESULTS:
+            raise HTTPException(
+                status_code=HTTPStatusCode.FORBIDDEN,
+                detail=HTTPErrorMessage.SESSION_CLOSED,
             )
 
         existing = (

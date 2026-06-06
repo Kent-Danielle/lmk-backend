@@ -18,6 +18,15 @@ class Mechanic(str, Enum):
 
 class ResultType(str, Enum):
     RECOMMENDATION = "RECOMMENDATION"
+    OVERALL = "OVERALL"
+
+
+# Controls the display order of result types in GET /results.
+# Change the list order here to reorder how types appear to clients.
+RESULT_TYPE_ORDER: list[ResultType] = [
+    ResultType.OVERALL,
+    ResultType.RECOMMENDATION,
+]
 
 
 NEXT_STATE = {

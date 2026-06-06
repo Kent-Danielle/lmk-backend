@@ -17,15 +17,16 @@ class Question(Base):
     display_order = Column(Integer, nullable=False)
 
     session = relationship("Session", back_populates="questions")
-    options = relationship("QuestionOption", back_populates="question")
+    options = relationship("QuestionOption", back_populates="question", order_by="QuestionOption.display_order")
     answers = relationship("Answer", back_populates="question")
 
 
 class QuestionOption(Base):
     __tablename__ = "question_options"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    question_id = Column(UUID(as_uuid=True), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
-    label       = Column(Text, nullable=False)
+    id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question_id   = Column(UUID(as_uuid=True), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
+    label         = Column(Text, nullable=False)
+    display_order = Column(Integer, nullable=False, default=0)
 
     question = relationship("Question", back_populates="options")
