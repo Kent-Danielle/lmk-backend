@@ -147,6 +147,8 @@ async def get_results(
         properties={
             "session_id": session_id,
             "result_count": len(data.results),
+            "participant_count": data.meta.participant_count,
+            "top_pick": data.meta.top_pick.value.get("name") if data.meta.top_pick else None,
         },
     )
 
